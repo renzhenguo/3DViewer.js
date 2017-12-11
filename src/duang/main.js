@@ -6,8 +6,15 @@
 
 'use strict';
 
-function Duang(options) {
-    console.log('todo Play Duang');
+/**
+ * @module Duang
+ */
+class Duang {
+  /**
+   * 构建函数
+   */
+  constructor (options) {
+  }
 }
 
-module.exports = Duang;
+export default Duang

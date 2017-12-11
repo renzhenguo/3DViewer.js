@@ -3,7 +3,7 @@
  * 大小统一选取24, tip位置在顶部, 颜色由css控制
  *
  * svg来源
- * 阿里: http://www.iconfont.cn/  
+ * 阿里: http://www.iconfont.cn/
  * 谷歌: https://material.io/icons/
  *
  * @author renzhenguo
@@ -23,7 +23,7 @@ let icons = {
  * @param name icon图标名称,对应icons里的key
  * @param tip 鼠标指向icon的提示
  */
-module.exports = function (dom, name, tip) {
+export default function (dom, name, tip) {
     let svg = icons[name] || tip || name;
     dom.innerHTML = svg;
 
@@ -44,5 +44,11 @@ module.exports = function (dom, name, tip) {
         if (dom.lastElementChild == span) {
             dom.removeChild(span);
         }
+    }
+    dom.onmousedown = function (event) {
+        dom.style = "background-color: rgba(0,0,0,0.3)";
+    }
+    dom.onmouseup = function (event) {
+        dom.style = "";
     }
 }

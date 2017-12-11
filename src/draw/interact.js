@@ -6,12 +6,12 @@
 
 'use strict';
 
-var icon = require('../public/icon.js');
+import icon from '../public/icon';
 
 /**
  * @module interact
  */
-module.exports = function (draw) {
+export default function (draw) {
   containerResize(draw);
   window.addEventListener('resize', function() {containerResize(draw)}, false);
 

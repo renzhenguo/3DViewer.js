@@ -7,85 +7,78 @@
 
 'use strict';
 
-var loadfile = require('./loadfile.js');
-var interact = require('./interact.js');
-var aide     = require('./aide.js');
-var css      = require('./css.js');
+import loadfile from './loadfile';
+import interact from './interact';
+import aide     from './aide';
+import css      from './css';
 
 /**
- * @module ThreePlay.Draw
+ * @module Draw
  */
-function Draw (options) {
-  this._initOpt(options);
-  this._initRes();
+class Draw {
 
-  loadfile(this).then(data => {
+  /**
+   * 构建函数
+   *
+   * 初始化参数&资源等
+   */
+  constructor (dom, options) {
+    // 基础参数
+    this.version  = '1.0.0';
+    this._options = options || {};
+    this._animate = this._animate.bind(this);
+
+    // 场景&相机
+    this.aide   = [];
+    this.scene  = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(90, 1, 0.01, 1000);
+
+    // 渲染器
+    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer.setClearColor(0x999999);
+    this.renderer.setPixelRatio( window.devicePixelRatio );
+
+    // dom元素
+    this.canvasDom    = this.renderer.domElement;
+    this.containerDom = document.getElementById(dom);
+
+    css(this.containerDom);
+  }
+
+  /**
+   * 加载文件
+   */
+  load (options) {
+    options.cb = (data => {
+      this._setContent(data);
+      this._animate();
+      return this;
+    });
+    return loadfile(options);
+  }
+
+  /**
+   * 设置内容
+   */
+  _setContent (data) {
     this.scene.add(data);
     this.containerDom.appendChild( this.canvasDom );
 
-    // 计算展示位置
-    aide.position(this, data);
-    // 线框
-    aide.lineSegments(this, data);
-
-    // 其他内容处理
-    console.log(data);
+    // 助手处理 展示位置,线框,展示动画等
+    aide(this, data);
 
     // 处理控制内容
     interact(this);
 
-    this._animate();
-    this._onLoad();
-  }).catch(this._onError );
+    // 其他内容处理
+  }
+
+  _animate () {
+    TWEEN.update();
+    this.renderer.render( this.scene, this.camera );
+    requestAnimationFrame( this._animate );
+  }
+
 }
 
-var drawProto = Draw.prototype;
-
-/**
- * 初始化参数
- */
-drawProto._initOpt = function (options) {
-  this.version  = '1.0.0';
-  this._options = options || {};
-  this._onError = this._options.onError || function(err) { console.log(err); }
-  this._onLoad  = this._options.onLoad  || function() {}
-
-  // 模型助手功能数据
-  this.aide = [];
-
-  css(this._options);
-}
-
-/**
- * 初始化元素
- */
-drawProto._initRes = function () {
-  // 场景
-  this.scene = new THREE.Scene();
-
-  // 相机
-  this.camera = new THREE.PerspectiveCamera(90, 1, 1, 1000);
-
-  // 渲染器
-  this.renderer = new THREE.WebGLRenderer({ antialias: true });
-  this.renderer.setClearColor(0x999999);
-  this.renderer.setPixelRatio( window.devicePixelRatio );
-
-  // 控制器
-  this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
-
-  // dom元素
-  this.containerDom = this._options.dom;
-  this.canvasDom = this.renderer.domElement;
-}
-
-drawProto._animate = function() {
-  if (!window.draw) window.draw = this;
-
-  draw.renderer.render( draw.scene, draw.camera );
-  draw.controls.update();
-
-  requestAnimationFrame( draw._animate );
-}
-
-module.exports = Draw;
+export default Draw

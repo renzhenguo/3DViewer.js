@@ -1,5 +1,5 @@
 {
-  "name": "threeplay",
+  "name": "3DViewer.js",
   "version": "1.0.0",
   "description": "3D模型展示库",
   "author": [
@@ -9,15 +9,15 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://git.duxze.com/renzhenguo/ThreePlay.js"
+    "url": "https://github.com/frogRen/3DViewer.js"
   },
-  "main": "src/index.js",
+  "main": "build/Viewer.js",
   "scripts": {
-    "watch": "webpack --progress --watch",
-    "build": "webpack && webpack -p"
+    "build": "node node_modules/webpack/bin/webpack.js"
   },
   "dependencies": {
-    "three": "0.88.0"
+    "three": "0.88.0",
+    "@tweenjs/tween.js": "^17.0.0"
   },
   "devDependencies": {
     "babel-core": "^6.0.0",

@@ -9,15 +9,15 @@
 /**
  * @module css
  */
-module.exports = function (options) {
+export default function (dom) {
   let css = document.createElement('style');
   css.innerHTML = getCss();
 
   let head = document.head || document.getElementsByTagName('head')[0];
   head.appendChild(css);
 
-  let className = (options.dom.className + ' drawdom').trim();
-  options.dom.setAttribute('class', className);
+  let className = (dom.className + ' drawdom').trim();
+  dom.setAttribute('class', className);
 };
 
 /**
@@ -67,6 +67,10 @@ function getCss() {
         line-height: 28px;
         top: -30px;
         left: -14px;
+        -webkit-user-select:none;
+        -moz-user-select:none;
+        -o-user-select:none;
+        user-select:none;
     }
   `;
 }

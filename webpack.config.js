@@ -9,11 +9,11 @@ var config = {
         }),
     ],
     entry: {
-        'ThreePlay': __dirname + '/src/index.js',
+        'Viewer': __dirname + '/src/index.js',
     },
     output: {
         libraryTarget: 'umd',
-        library: 'ThreePlay',
+        library: 'Viewer',
         path: __dirname + '/build',
         filename: PROD ? '[name].min.js' : '[name].js'
     },

@@ -6,8 +6,16 @@
 
 'use strict';
 
+global.THREE = require('three');
+global.TWEEN = require('@tweenjs/tween.js');
+
 require('../lib/OrbitControls.js');
 require('../lib/GLTFLoader.js');
 
-exports.Draw  = require('./draw/main.js');
-exports.Duang = require('./duang/main.js');
+import Duang from './duang/main';
+import Draw from './draw/main';
+
+export {
+  Draw,
+  Duang,
+}

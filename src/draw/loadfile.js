@@ -9,30 +9,29 @@
 /**
  * @module loadfile
  */
-module.exports = function (draw) {
+export default function (options) {
   let func;
-  switch(draw._options.type)
+  switch(options.type)
   {
     case 'glTF2':
       func = loadGltf2;
       break;
     default:
-      return Promise.reject(new Error('loadfile 不支持的类型: ' + draw._options.type));
+      return Promise.reject(new Error('loadfile 不支持的类型: ' + options.type));
   }
 
-  let promise = new Promise( function(resolve, reject) {
-    func(draw, resolve, reject);
+  return new Promise((resolve, reject) => {
+    func(options, resolve, reject);
   });
-  return promise;
 };
 
 /**
  * 加载glTF2
  */
-function loadGltf2 (draw, resolve, reject) {
+function loadGltf2 (options, resolve, reject) {
   let loader = new THREE.GLTFLoader();
 
-  loader.load(draw._options.file, function(gltf) {
+  loader.load(options.file, function(gltf) {
     let object = gltf.scene;
 
     object.traverse( function ( node ) {
@@ -42,7 +41,7 @@ function loadGltf2 (draw, resolve, reject) {
     // 多相机处理
 
     // 动画
-    var animations = gltf.animations;
+    let animations = gltf.animations;
     if (animations && animations.length) {
       mixer = new THREE.AnimationMixer( object );
 
@@ -52,15 +51,7 @@ function loadGltf2 (draw, resolve, reject) {
       object.mixer = mixer;
     }
 
-    // 临时灯光
-    let ambientLight = new THREE.AmbientLight( 0x999999 ); // 环境光
-    object.add( ambientLight );
-
-    let directionalLight = new THREE.DirectionalLight( 0xdddddd ); // 平行光阴影
-    directionalLight.position.set( 0, 0, 1 ).normalize();
-    object.add( directionalLight );
-
-    resolve(object);
+    resolve(options.cb(object));
   }, function () {
     // 加载过程
   }, function (err) {

@@ -1,15 +1,14 @@
 <template>
   <div>
 
-    <div id="div" style="width:100%; height:100%;" v-loading="loading">
+    <div id="divdom" style="width:100%; height:100%;" v-loading="loading">
     </div>
 
   </div>
 </template>
 
 <script>
-global.THREE  = require('three');
-var ThreePlay = require('threeplay');
+import * as Viewer from '3DViewer.js'
 
 export default {
   data () {
@@ -18,18 +17,15 @@ export default {
     }
   },
   mounted() {
-    var _this = this;
-    var draw = new ThreePlay.Draw({
-      'dom'    : document.getElementById("div"),
-      'type'   : 'glTF2',
-      'file'   : 'http://dev.imoxiu.cn/~renzhenguo/explore/WebGL/demo/model/HTC.gltf',
-      'onLoad' : function() {
-        _this.loading = false;
-      },
-      'onError': function(err) {
-        _this.loading = false;
-        _this.$notify.error({title: '失败', message: err.message});
-      },
+    var draw = new Viewer.Draw('divdom');
+    draw.load({
+      'type' : 'glTF2',
+      'file' : 'http://dev.imoxiu.cn/~renzhenguo/explore/WebGL/demo/model/HTC.gltf',
+    }).then(r => {
+      this.loading = false;
+    }).catch(err => {
+      this.loading = false;
+      this.$notify.error({title: '失败', message: err.message});
     });
   },
   methods: {

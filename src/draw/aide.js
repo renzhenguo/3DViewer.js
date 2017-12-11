@@ -7,38 +7,48 @@
 'use strict';
 
 /**
- * 初始展示位置的计算, TODO 动画效果
+ * 初始展示位置的计算
  */
-exports.position = function (draw, data) {
-  let area = {
-    'x': {'min': 100000, 'max': -100000},
-    'y': {'min': 100000, 'max': -100000},
-  };
-  data.traverse( function ( node ) {
-    if (node.geometry) {
-      node.geometry.computeBoundingSphere();
+let position = function (draw, data) {
+    let box    = new THREE.Box3().setFromObject(data);
+    let size   = box.getSize();
+    let center = box.getCenter();
 
-      let minX = node.geometry.boundingSphere.center.x - node.geometry.boundingSphere.radius;
-      area.x.min = Math.min(area.x.min, minX);
-      let maxX = node.geometry.boundingSphere.center.x + node.geometry.boundingSphere.radius;
-      area.x.max = Math.max(area.x.max, maxX);
-      let minY = node.geometry.boundingSphere.center.y - node.geometry.boundingSphere.radius;
-      area.y.min = Math.min(area.y.min, minY);
-      let maxY = node.geometry.boundingSphere.center.y + node.geometry.boundingSphere.radius;
-      area.y.max = Math.max(area.y.max, maxY);
-    }
-  } );
-  let diam = Math.max(area.x.max - area.x.min, area.y.max - area.y.min);
-  if (diam > 0) {
-    draw.camera.near = diam * 0.05;
-    draw.camera.position.z = diam * 0.6;
-  }
+    data.translateX(-center.x).translateY(-center.y).translateZ(-center.z);
+
+    //draw.camera.position.copy(center);
+    //draw.camera.lookAt(center);
+
+    let radius = Math.max(size.x, size.y);
+    draw.camera.far  = radius * 100;
+    draw.camera.near = radius / 100;
+    draw.camera.position.z = radius * 1.5;
+    draw.camera.updateProjectionMatrix();
+}
+
+/**
+ * 展示的动画效果
+ */
+let animation = function (draw) {
+  draw.scene.scale.x = draw.scene.scale.y = draw.scene.scale.z = 0.5;
+  draw.scene.rotation.y = -Math.PI/4;
+
+  new TWEEN.Tween(draw.scene.rotation)
+      .to({ y: 0 }, 1000)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .delay(500)
+      .start();
+  new TWEEN.Tween(draw.scene.scale)
+      .to({ x:1, y: 1, z:1 }, 1000)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .delay(500)
+      .start();
 }
 
 /**
  * 模型线框
  */
-exports.lineSegments = function (draw, data) {
+let lineSegments = function (draw, data) {
     draw.aide.lineSegments = [];
 
     data.traverse( function ( node ) {
@@ -51,4 +61,30 @@ exports.lineSegments = function (draw, data) {
             draw.aide.lineSegments.push( line );
         }
     });
+}
+
+/**
+ * 灯光
+ */
+let light = function (draw) {
+    // 临时灯光
+    let ambientLight = new THREE.AmbientLight( 0x999999 ); // 环境光
+    draw.scene.add( ambientLight );
+
+    let directionalLight = new THREE.DirectionalLight( 0xdddddd ); // 平行光阴影
+    directionalLight.position.set( 0, 0, 1 ).normalize();
+    draw.scene.add( directionalLight );
+}
+
+/**
+ * @module aide
+ */
+export default function (draw, data) {
+    position(draw, data);
+    animation(draw);
+    lineSegments(draw, data);
+    light(draw);
+
+    // 控制器
+    new THREE.OrbitControls(draw.camera, draw.canvasDom);
 }
