@@ -34,10 +34,6 @@ function loadGltf2 (options, resolve, reject) {
   loader.load(options.file, function(gltf) {
     let object = gltf.scene;
 
-    object.traverse( function ( node ) {
-        if ( node.isMesh ) node.castShadow = true;
-    } );
-
     // 多相机处理
 
     // 动画
@@ -51,7 +47,7 @@ function loadGltf2 (options, resolve, reject) {
       object.mixer = mixer;
     }
 
-    resolve(options.cb(object));
+    resolve(object);
   }, function () {
     // 加载过程
   }, function (err) {

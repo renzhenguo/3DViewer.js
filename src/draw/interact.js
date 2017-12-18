@@ -19,8 +19,8 @@ export default function (draw) {
   divDom.className = 'drawdom_ctrlbts';
   draw.containerDom.appendChild(divDom);
 
-  divDom.appendChild(requestFullscreen(draw));
-  divDom.appendChild(lineSegments(draw));
+  requestFullscreen(draw, divDom);
+  lineSegments(draw, divDom);
 };
 
 /**
@@ -40,7 +40,7 @@ function containerResize(draw) {
 /**
  * 全屏方法
  */
-function requestFullscreen(draw) {
+function requestFullscreen(draw, divDom) {
     let dom = document.createElement('span');
     icon(dom, 'fullscreen', '全屏');
 
@@ -79,22 +79,24 @@ function requestFullscreen(draw) {
         }
         icon(dom, 'fullscreen', '全屏');
     }
-    return dom;
+    divDom.appendChild(dom);
 }
 
 /**
  * 线框
  */
-function lineSegments (draw) {
-    if (draw.aide.lineSegments.length < 1) { return ; }
-
+function lineSegments (draw, divDom) {
     let dom = document.createElement('span');
     icon(dom, 'border_all', '线框');
+
+    let wireframe = true;
     dom.onclick = function () {
-      draw.aide.lineSegments.forEach(function (line, i) {
-        //line.material.depthTest = false;
-        line.material.visible = !line.material.visible;
-      });
+        draw.scene.traverse(function (node) {
+            if (node.isMesh) {
+                node.material.wireframe = wireframe;
+            }
+        });
+        wireframe = !wireframe;
     }
-    return dom;
+    divDom.appendChild(dom);
 }

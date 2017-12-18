@@ -101,11 +101,11 @@ var _main4 = _interopRequireDefault(_main3);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-global.THREE = __webpack_require__(9);
-global.TWEEN = __webpack_require__(10);
+global.THREE = __webpack_require__(11);
+global.TWEEN = __webpack_require__(12);
 
-__webpack_require__(12);
-__webpack_require__(13);
+__webpack_require__(14);
+__webpack_require__(15);
 
 exports.Draw = _main4.default;
 exports.Duang = _main2.default;
@@ -152,7 +152,7 @@ module.exports = g;
 
 
 /**
- * @module Duang
+ * @module ThreePlay.Duang
  */
 
 Object.defineProperty(exports, "__esModule", {
@@ -207,12 +207,16 @@ var _css = __webpack_require__(8);
 
 var _css2 = _interopRequireDefault(_css);
 
+var _debug2 = __webpack_require__(9);
+
+var _debug3 = _interopRequireDefault(_debug2);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /**
- * @module Draw
+ * @module ThreePlay.Draw
  */
 var Draw = function () {
 
@@ -236,8 +240,11 @@ var Draw = function () {
 
     // 渲染器
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setClearColor(0x999999);
+    this.renderer.setClearColor(0xcccccc);
     this.renderer.setPixelRatio(window.devicePixelRatio);
+
+    // 控制器
+    this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
 
     // dom元素
     this.canvasDom = this.renderer.domElement;
@@ -256,12 +263,18 @@ var Draw = function () {
     value: function load(options) {
       var _this = this;
 
-      options.cb = function (data) {
-        _this._setContent(data);
-        _this._animate();
-        return _this;
-      };
-      return (0, _loadfile2.default)(options);
+      return new Promise(function (resolve, reject) {
+        (0, _loadfile2.default)(options).then(function (data) {
+          _this._setContent(data);
+          _this._animate();
+
+          resolve(_this);
+        }).catch(function (err) {
+          ;
+          _this.containerDom.innerHTML = '';
+          reject(err);
+        });
+      });
     }
 
     /**
@@ -271,6 +284,7 @@ var Draw = function () {
   }, {
     key: '_setContent',
     value: function _setContent(data) {
+      this.scene.add(this.camera);
       this.scene.add(data);
       this.containerDom.appendChild(this.canvasDom);
 
@@ -286,8 +300,19 @@ var Draw = function () {
     key: '_animate',
     value: function _animate() {
       TWEEN.update();
+      this.controls.update();
       this.renderer.render(this.scene, this.camera);
       requestAnimationFrame(this._animate);
+    }
+
+    /**
+     * 查看调试信息
+     */
+
+  }, {
+    key: 'debug',
+    value: function debug() {
+      (0, _debug3.default)(this);
     }
   }]);
 
@@ -343,10 +368,6 @@ function loadGltf2(options, resolve, reject) {
   loader.load(options.file, function (gltf) {
     var object = gltf.scene;
 
-    object.traverse(function (node) {
-      if (node.isMesh) node.castShadow = true;
-    });
-
     // 多相机处理
 
     // 动画
@@ -360,7 +381,7 @@ function loadGltf2(options, resolve, reject) {
       object.mixer = mixer;
     }
 
-    resolve(options.cb(object));
+    resolve(object);
   }, function () {
     // 加载过程
   }, function (err) {
@@ -395,8 +416,8 @@ exports.default = function (draw) {
     divDom.className = 'drawdom_ctrlbts';
     draw.containerDom.appendChild(divDom);
 
-    divDom.appendChild(requestFullscreen(draw));
-    divDom.appendChild(lineSegments(draw));
+    requestFullscreen(draw, divDom);
+    lineSegments(draw, divDom);
 };
 
 var _icon = __webpack_require__(6);
@@ -429,7 +450,7 @@ function containerResize(draw) {
 /**
  * 全屏方法
  */
-function requestFullscreen(draw) {
+function requestFullscreen(draw, divDom) {
     var dom = document.createElement('span');
     (0, _icon2.default)(dom, 'fullscreen', '全屏');
 
@@ -453,26 +474,26 @@ function requestFullscreen(draw) {
         }
         (0, _icon2.default)(dom, 'fullscreen', '全屏');
     };
-    return dom;
+    divDom.appendChild(dom);
 }
 
 /**
  * 线框
  */
-function lineSegments(draw) {
-    if (draw.aide.lineSegments.length < 1) {
-        return;
-    }
-
+function lineSegments(draw, divDom) {
     var dom = document.createElement('span');
     (0, _icon2.default)(dom, 'border_all', '线框');
+
+    var wireframe = true;
     dom.onclick = function () {
-        draw.aide.lineSegments.forEach(function (line, i) {
-            //line.material.depthTest = false;
-            line.material.visible = !line.material.visible;
+        draw.scene.traverse(function (node) {
+            if (node.isMesh) {
+                node.material.wireframe = wireframe;
+            }
         });
+        wireframe = !wireframe;
     };
-    return dom;
+    divDom.appendChild(dom);
 }
 
 /***/ }),
@@ -557,6 +578,7 @@ var icons = {
 "use strict";
 /**
  * 助手,辅助模型信息
+ * 位置 大小 动画 灯光 贴图 背景 等展示优化
  *
  * @author renzhenguo
  */
@@ -564,7 +586,7 @@ var icons = {
 
 
 /**
- * 初始展示位置的计算
+ * @module aide
  */
 
 Object.defineProperty(exports, "__esModule", {
@@ -573,15 +595,15 @@ Object.defineProperty(exports, "__esModule", {
 
 exports.default = function (draw, data) {
     position(draw, data);
-    animation(draw);
-    lineSegments(draw, data);
-    light(draw);
-
-    // 控制器
-    new THREE.OrbitControls(draw.camera, draw.canvasDom);
+    animation(draw, data);
+    light(draw, data);
+    other(draw, data);
 };
 
-var position = function position(draw, data) {
+/**
+ * 初始展示位置的计算
+ */
+function position(draw, data) {
     var box = new THREE.Box3().setFromObject(data);
     var size = box.getSize();
     var center = box.getCenter();
@@ -596,53 +618,47 @@ var position = function position(draw, data) {
     draw.camera.near = radius / 100;
     draw.camera.position.z = radius * 1.5;
     draw.camera.updateProjectionMatrix();
-};
+
+    draw.controls.maxDistance = radius * 10;
+}
 
 /**
  * 展示的动画效果
  */
-var animation = function animation(draw) {
-    draw.scene.scale.x = draw.scene.scale.y = draw.scene.scale.z = 0.5;
-    draw.scene.rotation.y = -Math.PI / 4;
+function animation(draw, data) {
+    data.scale.x = data.scale.y = data.scale.z = 0.5;
+    data.rotation.y = -Math.PI / 4;
 
-    new TWEEN.Tween(draw.scene.rotation).to({ y: 0 }, 1000).easing(TWEEN.Easing.Quadratic.Out).delay(500).start();
-    new TWEEN.Tween(draw.scene.scale).to({ x: 1, y: 1, z: 1 }, 1000).easing(TWEEN.Easing.Quadratic.Out).delay(500).start();
-};
-
-/**
- * 模型线框
- */
-var lineSegments = function lineSegments(draw, data) {
-    draw.aide.lineSegments = [];
-
-    data.traverse(function (node) {
-        if (node.geometry) {
-            var wireframe = new THREE.WireframeGeometry(node.geometry);
-            var line = new THREE.LineSegments(wireframe);
-            line.material.visible = false;
-            data.add(line);
-
-            draw.aide.lineSegments.push(line);
-        }
-    });
-};
+    new TWEEN.Tween(data.rotation).to({ y: 0 }, 1500).easing(TWEEN.Easing.Quadratic.Out).start();
+    new TWEEN.Tween(data.scale).to({ x: 1, y: 1, z: 1 }, 1500).easing(TWEEN.Easing.Quadratic.Out).start();
+}
 
 /**
  * 灯光
  */
-var light = function light(draw) {
+function light(draw, data) {
     // 临时灯光
-    var ambientLight = new THREE.AmbientLight(0x999999); // 环境光
-    draw.scene.add(ambientLight);
+    var ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.3); // 环境光
+    draw.camera.add(ambientLight);
 
-    var directionalLight = new THREE.DirectionalLight(0xdddddd); // 平行光阴影
-    directionalLight.position.set(0, 0, 1).normalize();
-    draw.scene.add(directionalLight);
-};
+    var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 0.8); // 平行光阴影
+    directionalLight.position.set(0.5, 0, 0.866); // ~60º
+    draw.camera.add(directionalLight);
+}
 
 /**
- * @module aide
+ * 其他相关
  */
+function other(draw, data) {
+    var encoding = THREE.LinearEncoding; //THREE.sRGBEncoding;
+    data.traverse(function (node) {
+        if (node.isMesh) {
+            if (node.material.map) node.material.map.encoding = encoding;
+            if (node.material.emissiveMap) node.material.emissiveMap.encoding = encoding;
+            if (node.material.map || node.material.emissiveMap) node.material.needsUpdate = true;
+        }
+    });
+}
 
 /***/ }),
 /* 8 */
@@ -687,6 +703,62 @@ function getCss() {
 
 /***/ }),
 /* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/**
+ * debug
+ * 调试信息,轴线/帧率/自动旋转等
+ *
+ * @author renzhenguo
+ */
+
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+exports.default = function (draw) {
+
+  var stats = new _stats2.default();
+  stats.domElement.style.position = 'absolute';
+  [].forEach.call(stats.dom.children, function (child) {
+    return child.style.display = '';
+  });
+  draw.containerDom.appendChild(stats.domElement);
+
+  (function animate() {
+    stats.update();
+    requestAnimationFrame(animate);
+  }).call();
+
+  var len = draw.controls.maxDistance == Infinity ? 10 : draw.controls.maxDistance / 10;
+  var axisHelper = new THREE.AxesHelper(len);
+  draw.scene.add(axisHelper);
+
+  draw.controls.autoRotate = true;
+};
+
+var _stats = __webpack_require__(10);
+
+var _stats2 = _interopRequireDefault(_stats);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// stats.js - http://github.com/mrdoob/stats.js
+(function(f,e){ true?module.exports=e():"function"===typeof define&&define.amd?define(e):f.Stats=e()})(this,function(){var f=function(){function e(a){c.appendChild(a.dom);return a}function u(a){for(var d=0;d<c.children.length;d++)c.children[d].style.display=d===a?"block":"none";l=a}var l=0,c=document.createElement("div");c.style.cssText="position:fixed;top:0;left:0;cursor:pointer;opacity:0.9;z-index:10000";c.addEventListener("click",function(a){a.preventDefault();
+u(++l%c.children.length)},!1);var k=(performance||Date).now(),g=k,a=0,r=e(new f.Panel("FPS","#0ff","#002")),h=e(new f.Panel("MS","#0f0","#020"));if(self.performance&&self.performance.memory)var t=e(new f.Panel("MB","#f08","#201"));u(0);return{REVISION:16,dom:c,addPanel:e,showPanel:u,begin:function(){k=(performance||Date).now()},end:function(){a++;var c=(performance||Date).now();h.update(c-k,200);if(c>g+1E3&&(r.update(1E3*a/(c-g),100),g=c,a=0,t)){var d=performance.memory;t.update(d.usedJSHeapSize/
+1048576,d.jsHeapSizeLimit/1048576)}return c},update:function(){k=this.end()},domElement:c,setMode:u}};f.Panel=function(e,f,l){var c=Infinity,k=0,g=Math.round,a=g(window.devicePixelRatio||1),r=80*a,h=48*a,t=3*a,v=2*a,d=3*a,m=15*a,n=74*a,p=30*a,q=document.createElement("canvas");q.width=r;q.height=h;q.style.cssText="width:80px;height:48px";var b=q.getContext("2d");b.font="bold "+9*a+"px Helvetica,Arial,sans-serif";b.textBaseline="top";b.fillStyle=l;b.fillRect(0,0,r,h);b.fillStyle=f;b.fillText(e,t,v);
+b.fillRect(d,m,n,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d,m,n,p);return{dom:q,update:function(h,w){c=Math.min(c,h);k=Math.max(k,h);b.fillStyle=l;b.globalAlpha=1;b.fillRect(0,0,r,m);b.fillStyle=f;b.fillText(g(h)+" "+e+" ("+g(c)+"-"+g(k)+")",t,v);b.drawImage(q,d+a,m,n-a,p,d,m,n-a,p);b.fillRect(d+n-a,m,a,p);b.fillStyle=l;b.globalAlpha=.9;b.fillRect(d+n-a,m,a,g((1-h/w)*p))}}};return f});
+
+
+/***/ }),
+/* 11 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -45748,7 +45820,7 @@ function CanvasRenderer() {
 
 
 /***/ }),
-/* 10 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(process) {var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
@@ -46665,10 +46737,10 @@ TWEEN.Interpolation = {
 
 })(this);
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(11)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(13)))
 
 /***/ }),
-/* 11 */
+/* 13 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -46858,7 +46930,7 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 12 */
+/* 14 */
 /***/ (function(module, exports) {
 
 /**
@@ -47906,7 +47978,7 @@ Object.defineProperties( THREE.OrbitControls.prototype, {
 
 
 /***/ }),
-/* 13 */
+/* 15 */
 /***/ (function(module, exports) {
 
 /**

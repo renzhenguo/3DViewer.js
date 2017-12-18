@@ -17,7 +17,8 @@
   },
   "dependencies": {
     "three": "0.88.0",
-    "@tweenjs/tween.js": "^17.0.0"
+    "@tweenjs/tween.js": "^17.0.0",
+    "stats.js": "0.17.0"
   },
   "devDependencies": {
     "babel-core": "^6.0.0",

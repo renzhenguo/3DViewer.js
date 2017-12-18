@@ -7,7 +7,7 @@
 'use strict';
 
 /**
- * @module Duang
+ * @module ThreePlay.Duang
  */
 class Duang {
   /**

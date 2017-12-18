@@ -81,6 +81,10 @@ examples 中有 vue 和 普通 JavaScript 标签引入的示例
   file: 文件地址, 注意跨域加载问题
   ~~~
 
+* debug方法
+
+  作用: 开启调试信息,包含: 轴线、javascript运行情况、自动旋转
+  参数、返回: 无
 
 ### 其他介绍
 

@@ -11,9 +11,10 @@ import loadfile from './loadfile';
 import interact from './interact';
 import aide     from './aide';
 import css      from './css';
+import debug    from './debug';
 
 /**
- * @module Draw
+ * @module ThreePlay.Draw
  */
 class Draw {
 
@@ -35,8 +36,11 @@ class Draw {
 
     // 渲染器
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setClearColor(0x999999);
+    this.renderer.setClearColor(0xcccccc);
     this.renderer.setPixelRatio( window.devicePixelRatio );
+
+    // 控制器
+    this.controls = new THREE.OrbitControls( this.camera, this.renderer.domElement );
 
     // dom元素
     this.canvasDom    = this.renderer.domElement;
@@ -49,19 +53,25 @@ class Draw {
    * 加载文件
    */
   load (options) {
-    options.cb = (data => {
-      this._setContent(data);
-      this._animate();
-      return this;
-    });
-    return loadfile(options);
+      return new Promise((resolve, reject) => {
+          loadfile(options).then(data => {
+              this._setContent(data);
+              this._animate();
+
+              resolve(this);
+          }).catch(err => {;
+              this.containerDom.innerHTML = '';
+              reject(err);
+          });
+      });
   }
 
   /**
    * 设置内容
    */
   _setContent (data) {
-    this.scene.add(data);
+    this.scene.add( this.camera );
+    this.scene.add( data );
     this.containerDom.appendChild( this.canvasDom );
 
     // 助手处理 展示位置,线框,展示动画等
@@ -75,9 +85,15 @@ class Draw {
 
   _animate () {
     TWEEN.update();
+    this.controls.update();
     this.renderer.render( this.scene, this.camera );
     requestAnimationFrame( this._animate );
   }
+
+  /**
+   * 查看调试信息
+   */
+  debug () { debug( this ); }
 
 }
 

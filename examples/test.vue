@@ -23,6 +23,8 @@ export default {
       'file' : 'http://dev.imoxiu.cn/~renzhenguo/explore/WebGL/demo/model/HTC.gltf',
     }).then(r => {
       this.loading = false;
+
+      draw.debug(); 显示调试信息
     }).catch(err => {
       this.loading = false;
       this.$notify.error({title: '失败', message: err.message});
